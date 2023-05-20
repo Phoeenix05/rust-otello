@@ -1,53 +1,31 @@
 use sdl2::{
     event::Event,
     pixels::Color,
-    rect::{Point, Rect},
+    rect::Rect,
     render::{Canvas, RenderTarget},
 };
 
-const TILE_SIZE: u32 = 64;
-const TILES: usize = 8;
-const WINDOW_SIZE: u32 = (TILES as i32 * TILE_SIZE as i32) as u32;
+const TILE_SZ: u32 = 64;
+const TILES: u32 = 8;
+const WINDOW_SZ: u32 = TILES * TILE_SZ;
 
-fn draw_grid<T: RenderTarget>(grid: &[[i32; TILES]; TILES], canvas: &mut Canvas<T>) {
-    let mut x: i32 = -1;
-    let mut y: i32 = -1;
-
-    canvas.set_draw_color(Color::RGB(255, 255, 255));
-
-    for _ in 0..TILES {
-        canvas
-            .draw_line(Point::new(x, 0), Point::new(y, WINDOW_SIZE as i32))
-            .expect("");
-        canvas
-            .draw_line(Point::new(0, y), Point::new(WINDOW_SIZE as i32, x))
-            .expect("");
-
-        x = x + TILE_SIZE as i32;
-        y = y + TILE_SIZE as i32;
-    }
-
-    for y in grid[0] {
-        for x in grid[y as usize] {
-            if grid[y as usize][x as usize] == 1 {
-                canvas
-                    .fill_rect(Rect::new(
-                        x * TILE_SIZE as i32,
-                        y * TILE_SIZE as i32,
-                        TILE_SIZE,
-                        TILE_SIZE
-                    ))
-                    .expect("");
-            }
-        }
-    }
+struct Tile {
+    rect: Rect,
+    color: Color,
 }
 
-fn mouse_pos_to_grid(p: [i32; 2]) -> [usize; 2] {
-    [
-        (p[0] / TILE_SIZE as i32) as usize,
-        (p[1] / TILE_SIZE as i32) as usize,
-    ]
+impl Tile {
+    fn has_match(tile: &Tile) {}
+}
+
+fn draw_grid<T: RenderTarget>(canvas: &mut Canvas<T>) {
+    for i in 0..TILES {
+        let j = (i as u32 * TILE_SZ) as i32 - 1;
+
+        canvas.set_draw_color(Color::RGB(64, 64, 64));
+        canvas.draw_line((j, 0), (j, WINDOW_SZ as i32)).expect("");
+        canvas.draw_line((0, j), (WINDOW_SZ as i32, j)).expect("");
+    }
 }
 
 fn main() {
@@ -55,7 +33,7 @@ fn main() {
     let video_subsystem = sdl_context.video().unwrap();
 
     let window = video_subsystem
-        .window("", WINDOW_SIZE, WINDOW_SIZE)
+        .window("", WINDOW_SZ, WINDOW_SZ)
         .position_centered()
         .build()
         .unwrap();
@@ -63,11 +41,11 @@ fn main() {
     let mut canvas = window.into_canvas().build().unwrap();
     let mut events = sdl_context.event_pump().unwrap();
 
-    let mut grid = [[0i32; TILES as usize]; TILES as usize];
+    let mut tiles: Vec<Tile> = Vec::new();
 
     'game: loop {
         // Clear window
-        canvas.set_draw_color(Color::BLACK);
+        canvas.set_draw_color(Color::RGB(24, 24, 24));
         canvas.clear();
 
         // Check events
@@ -75,16 +53,19 @@ fn main() {
             match event {
                 Event::Quit { .. } => break 'game,
                 Event::MouseButtonDown { x, y, .. } => {
-                    let mpos = mouse_pos_to_grid([x, y]);
-                    println!("{:?}", mpos);
-                    grid[mpos[1]][mpos[0]] = 1;
+                    let tile = Tile {
+                        rect: Rect::new(x / x as i32, y / y as i32, TILE_SZ, TILE_SZ),
+                        color: Color::RGB(255, 255, 255),
+                    };
+
+                    Tile::has_match(&tile);
                 }
                 _ => {}
             }
         }
 
         // Draw grid
-        draw_grid(&grid, &mut canvas);
+        draw_grid(&mut canvas);
 
         canvas.present();
     }
